@@ -1,7 +1,17 @@
 # AWS Split serverless stack -  example
 
+
 This repository provides an example of using the [serverless framework](https://serverless.com) with split stacks
 i.e. splitting the CloudFormation resources across multiple stacks.
+
+## Why Split Stak
+
+CloudFormation Resouce max limit is 200, So if we add more microservice then we will see below error message. In this case we have to slipt our stack
+```bash
+Error --------------------------------------------------
+
+The CloudFormation template is invalid: Template format error: Number of resources, 201, is greater than maximum allowed, 200
+```
 
 ## This example included blow points
 
