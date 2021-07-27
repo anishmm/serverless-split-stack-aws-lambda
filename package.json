@@ -1,0 +1,31 @@
+{
+  "name": "Test_serverless",
+  "version": "1.0.0",
+  "description": "",
+  "main": "handler.js",
+  "scripts": {
+    "offline": "sls offline start --skipCacheInvalidation --stage dev"
+  },
+  "keywords": [],
+  "author": "Anish Manchappillil",
+  "license": "MIT",
+  "devDependencies": {
+    "serverless-offline": "^6.9.0",
+    "serverless-webpack": "^5.3.5",
+    "webpack": "^4.44.2",
+    "webpack-node-externals": "^2.5.2"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.942.0",
+    "bcryptjs": "^2.4.3",
+    "bcryptjs-then": "^1.0.1",
+    "crypto": "^1.0.1",
+    "dotenv": "^4.0.0",
+    "file-type": "^16.5.0",
+    "joi": "^17.4.0",
+    "jsonwebtoken": "^8.5.1",
+    "lambda-multipart": "^1.0.2",
+    "mongoose": "^5.12.4",
+    "uuid": "^8.3.2"
+  }
+}

@@ -1,0 +1,130 @@
+service: ${self:custom.config.BASE_NAME}
+provider:
+ name: aws
+ runtime: nodejs14.x    # set  Node.js runtime
+ stage: ${opt:stage}
+ stackName: ${self:service}
+ region: ${self:custom.config.REGION}
+ #memorySize: 128        # set the maximum memory of the Lambdas in Megabytes
+ #timeout: 10            # the timeout is 10 seconds (default is 6 seconds)
+ logRetentionInDays: 7 # log keep only 7 days 
+ lambdaHashingVersion: 20201221 # for upcoming Serverless v3
+ stackTags:
+    stage: ${opt:stage}
+    application: ${self:custom.config.TAG}
+    service: "middleware"
+
+
+custom:
+  config: ${file(config-${opt:stage}.yml)}
+
+
+functions:            # add 4 functions for CRUD
+  generalAuthorizer:
+    environment:
+      ${file(config-${opt:stage}.yml)}
+    handler: api/login/verify_token.auth  
+
+resources:
+ Description: Test Root stack
+ Resources:
+   BucketUpload:
+      Type: AWS::S3::Bucket
+      Properties:
+        AccessControl: Private
+        CorsConfiguration:
+          CorsRules:
+          - AllowedMethods:
+            - GET
+            - PUT
+            - POST
+            - HEAD
+            AllowedOrigins:
+            - "*"
+            AllowedHeaders:
+            - "*"
+        BucketName: ${self:custom.config.S3_BUCKET_NAME}
+
+   ApiGatewayRestApi:
+      Type: AWS::ApiGateway::RestApi
+      Properties:
+        BinaryMediaTypes:
+          - 'image/gif'
+          - 'image/png'
+          - 'image/jpeg'
+          - 'image/jpg'
+          - 'multipart/form-data'
+        Name: ${self:custom.config.BASE_NAME}-${opt:stage}-api
+   
+   GatewayResponseDefault4XX:
+      Type: "AWS::ApiGateway::GatewayResponse"
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+        ResponseType: DEFAULT_4XX
+        RestApiId: {"Ref" : "ApiGatewayRestApi"}
+   
+   GatewayResponseDefault5XX:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+        ResponseType: DEFAULT_5XX
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+
+   # Authorizer
+   ApiGatewayAuthorizerPermission:
+     Type: AWS::Lambda::Permission
+     Properties:
+         FunctionName:
+             Fn::GetAtt: GeneralAuthorizerLambdaFunction.Arn
+         Action: lambda:InvokeFunction
+         Principal:
+           Fn::Join: ["",["apigateway.", { Ref: "AWS::URLSuffix"}]]
+   ApiGatewayAuthorizer:
+     DependsOn:
+       - ApiGatewayRestApi
+     Type: AWS::ApiGateway::Authorizer
+     Properties: 
+       Name: ${self:custom.config.BASE_NAME}-${opt:stage}-Authorizer
+       RestApiId: { "Ref" : "ApiGatewayRestApi" }
+       Type: TOKEN
+       IdentitySource: method.request.header.Authorization
+       AuthorizerResultTtlInSeconds: 0
+       AuthorizerUri:
+         Fn::Join:
+           - ''
+           - 
+             - 'arn:aws:apigateway:'
+             - Ref: "AWS::Region"
+             - ':lambda:path/2015-03-31/functions/'
+             - Fn::GetAtt: "GeneralAuthorizerLambdaFunction.Arn"
+             - "/invocations"
+
+ Outputs:
+   ApiGatewayAuthorizerId:
+     Value:
+       Ref: ApiGatewayAuthorizer
+     Export:
+       Name: ${self:custom.config.BASE_NAME}-${opt:stage}-ApiGatewayAuthorizerId
+   
+   apiGatewayRestApiId:
+     Value:
+       Ref: ApiGatewayRestApi
+     Export:
+       Name: ${self:custom.config.BASE_NAME}-${opt:stage}-restApiId
+   
+   apiGatewayRestApiRootResourceId:
+     Value:
+        Fn::GetAtt:
+         - ApiGatewayRestApi
+         - RootResourceId
+     Export:
+       Name: ${self:custom.config.BASE_NAME}-${opt:stage}-rootResourceId 
+
+ 
+plugins:
+- serverless-offline # adding the plugin to be able to run the offline emulation  

@@ -1,0 +1,188 @@
+service: ${self:custom.config.BASE_NAME}-Admin
+resources:
+  Description: Test admin Stack
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  region: ${self:custom.config.REGION}
+  stackName: ${self:service}
+  stackTags:
+    stage: ${opt:stage}
+    application: ${self:custom.config.TAG}
+    service: "middleware"
+
+  memorySize: 512         # set the maximum memory of the Lambdas in Megabytes
+  timeout: 10             # the timeout is 10 seconds (default is 6 seconds)
+  logRetentionInDays: 7   # log keep only 7 days 
+  lambdaHashingVersion: 20201221  # for upcoming Serverless v3
+
+  apiGateway:
+    restApiId:
+      Fn::ImportValue: "${self:custom.config.BASE_NAME}-${opt:stage}-restApiId"
+    restApiRootResourceId:
+      Fn::ImportValue: "${self:custom.config.BASE_NAME}-${opt:stage}-rootResourceId"
+
+custom:
+  config: ${file(../../config-${opt:stage}.yml)}
+
+  webpack:
+    includeModules:
+      forceExclude:
+        - aws-sdk
+      packagePath: ../../package.json
+      
+  authorizer:
+    type: TOKEN
+    authorizerId:
+      Fn::ImportValue: ${self:custom.config.BASE_NAME}-${opt:stage}-ApiGatewayAuthorizerId
+
+plugins:
+  - serverless-webpack 
+package:
+  include:
+    - ../../node_modules
+
+functions:            
+
+## DEPARTMENT API
+  DepartmentCreate:
+    name: ${self:custom.config.BASE_NAME}-${opt:stage}-DepartmentCreate
+    environment:
+      ${file(../../config-${opt:stage}.yml)}
+    handler: api_department.create
+    description: Create department API
+    events:
+      - http:
+          path: /department
+          method: POST
+          integration: lambda-proxy
+          authorizer: ${self:custom.authorizer}
+          cors: true
+
+  DepartmentUpdate:
+    name: ${self:custom.config.BASE_NAME}-${opt:stage}-DepartmentUpdate
+    environment:
+      ${file(../../config-${opt:stage}.yml)}  
+    handler: api_department.update
+    description: update department API , id is required 
+    events:
+      - http:
+          path: /department
+          method: PUT
+          integration: lambda-proxy
+          authorizer: ${self:custom.authorizer}
+          cors: true
+
+  DepartmentSearch:
+    name: ${self:custom.config.BASE_NAME}-${opt:stage}-DepartmentSearch
+    environment:
+      ${file(../../config-${opt:stage}.yml)}    
+    handler: api_department.search
+    description: Search department data and get list , authorization is required
+    events:
+      - http:
+          path: /department/search
+          method: GET
+          integration: lambda-proxy
+          authorizer: ${self:custom.authorizer} 
+          cors: true 
+
+  DepartmentDelete:
+    name: ${self:custom.config.BASE_NAME}-${opt:stage}-DepartmentDelete
+    environment:
+      ${file(../../config-${opt:stage}.yml)}    
+    handler: api_department.delete
+    description: Find ID and Delete , authorization is required
+    events:
+      - http:
+          path: /department/{id}
+          method: DELETE
+          integration: lambda-proxy
+          authorizer: ${self:custom.authorizer} 
+          cors: true   
+
+  DepartmentGetAll:
+    name: ${self:custom.config.BASE_NAME}-${opt:stage}-DepartmentGetAll
+    environment:
+      ${file(../../config-${opt:stage}.yml)}   
+    handler: api_department.getAll
+    description: Get all department  , authorization is required
+    events:
+      - http:
+          path: /department/all
+          method: GET
+          integration: lambda-proxy
+          authorizer: ${self:custom.authorizer} 
+          cors: true 
+
+## DESIGNATION API
+  DesignationCreate:
+    name: ${self:custom.config.BASE_NAME}-${opt:stage}-DesignationCreate
+    environment:
+      ${file(../../config-${opt:stage}.yml)}
+    handler: api_designation.create
+    description: Create designation API
+    events:
+      - http:
+          path: /designation
+          method: POST
+          integration: lambda-proxy
+          authorizer: ${self:custom.authorizer}
+          cors: true
+
+  DesignationUpdate:
+    name: ${self:custom.config.BASE_NAME}-${opt:stage}-DesignationUpdate
+    environment:
+      ${file(../../config-${opt:stage}.yml)}  
+    handler: api_designation.update
+    description: update designation API , id is required 
+    events:
+      - http:
+          path: /designation
+          method: PUT
+          integration: lambda-proxy
+          authorizer: ${self:custom.authorizer}
+          cors: true
+
+  DesignationSearch:
+    name: ${self:custom.config.BASE_NAME}-${opt:stage}-DesignationSearch
+    environment:
+      ${file(../../config-${opt:stage}.yml)}    
+    handler: api_designation.search
+    description: Search designation data and get list , authorization is required
+    events:
+      - http:
+          path: /designation/search
+          method: GET
+          integration: lambda-proxy
+          authorizer: ${self:custom.authorizer} 
+          cors: true 
+
+  DesignationDelete:
+    name: ${self:custom.config.BASE_NAME}-${opt:stage}-DesignationDelete
+    environment:
+      ${file(../../config-${opt:stage}.yml)}    
+    handler: api_designation.delete
+    description: Find ID and Delete , authorization is required
+    events:
+      - http:
+          path: /designation/{id}
+          method: DELETE
+          integration: lambda-proxy
+          authorizer: ${self:custom.authorizer} 
+          cors: true  
+
+  DesignationGetAll:
+    name: ${self:custom.config.BASE_NAME}-${opt:stage}-DesignationGetAll
+    environment:
+      ${file(../../config-${opt:stage}.yml)}   
+    handler: api_designation.getAll
+    description: Get all designation  , authorization is required
+    events:
+      - http:
+          path: /designation/all
+          method: GET
+          integration: lambda-proxy
+          authorizer: ${self:custom.authorizer} 
+          cors: true 

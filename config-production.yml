@@ -1,0 +1,17 @@
+# BASIC DETAIL
+BASE_NAME: my_project_prod
+REGION: us-east-1
+TAG: my_project_tag
+
+# MongoDB
+MONGO_DB_CONNECTION:  'mongodb+srv:// - '
+
+# JWT
+JWT_SECRET: 'LOGIN_SECRET_PRD'
+
+# S3 Bucket Access ROLE
+IAM_USER_KEY: "IAM_KEY"
+IAM_USER_SECRET:  ""
+
+# S3 Bucket 
+S3_BUCKET_NAME: "S3_BUCKET_PRD"

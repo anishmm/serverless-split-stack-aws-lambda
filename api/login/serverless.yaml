@@ -1,0 +1,89 @@
+service: ${self:custom.config.BASE_NAME}-Auth
+resources:
+  Description: Test Auth Stack
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  region: ${self:custom.config.REGION}
+  stackName: ${self:service}
+  stackTags:
+    stage: ${opt:stage}
+    application: ${self:custom.config.TAG}
+    service: "middleware"
+
+  memorySize: 512        # set the maximum memory of the Lambdas in Megabytes
+  timeout: 10            # the timeout is 10 seconds (default is 6 seconds)
+  logRetentionInDays: 7 # log keep only 7 days 
+  lambdaHashingVersion: 20201221 # for upcoming Serverless v3
+
+  apiGateway:
+    restApiId:
+      Fn::ImportValue: "${self:custom.config.BASE_NAME}-${opt:stage}-restApiId"
+    restApiRootResourceId:
+      Fn::ImportValue: "${self:custom.config.BASE_NAME}-${opt:stage}-rootResourceId"
+
+custom:
+  config: ${file(../../config-${opt:stage}.yml)}
+
+  webpack:
+    includeModules:
+      forceExclude:
+        - aws-sdk
+      packagePath: ../../package.json
+      
+  authorizer:
+    type: TOKEN
+    authorizerId:
+      Fn::ImportValue: ${self:custom.config.BASE_NAME}-${opt:stage}-ApiGatewayAuthorizerId
+
+plugins:
+  - serverless-webpack
+package:
+  include:
+    - ../../node_modules
+
+functions:   
+  ## LOGIN
+  Login:
+    name: ${self:custom.config.BASE_NAME}-${opt:stage}-Login
+    environment:
+      ${file(../../config-${opt:stage}.yml)}
+    handler: auth.login
+    description: Login API
+    events:
+      - http:
+          path: /login
+          method: post
+          integration: lambda-proxy
+          cors: true
+
+  ## REGISTER         
+  Register:
+    name: ${self:custom.config.BASE_NAME}-${opt:stage}-Register
+    environment:
+      ${file(../../config-${opt:stage}.yml)}    
+    handler: auth.register
+    description: Register API
+    events:
+      - http:
+          path: /register
+          method: POST
+          integration: lambda-proxy
+          authorizer: ${self:custom.authorizer}
+          cors: true
+          
+  ## GET SELF DATA ID TAKEN  FROM TOKEN
+  GetMe:
+    name: ${self:custom.config.BASE_NAME}-${opt:stage}-GetMe
+    environment:
+      ${file(../../config-${opt:stage}.yml)}   
+    handler: api_user.me
+    description: Get user details (SELF DATA), authorization is required
+    events:
+      - http:
+          path: /me
+          method: get
+          integration: lambda-proxy
+          authorizer: ${self:custom.authorizer} 
+          cors: true 

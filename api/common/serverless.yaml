@@ -1,0 +1,74 @@
+service: ${self:custom.config.BASE_NAME}-common
+resources:
+  Description: Test Common Stack
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  region: ${self:custom.config.REGION}
+  stackName: ${self:service}
+  stackTags:
+    stage: ${opt:stage}
+    application: ${self:custom.config.TAG}
+    service: "middleware"
+
+  memorySize: 512        # set the maximum memory of the Lambdas in Megabytes
+  timeout: 10            # the timeout is 10 seconds (default is 6 seconds)
+  logRetentionInDays: 7  # log keep only 7 days 
+  lambdaHashingVersion: 20201221 # for upcoming Serverless v3
+
+  apiGateway:
+    restApiId:
+      Fn::ImportValue: "${self:custom.config.BASE_NAME}-${opt:stage}-restApiId"
+    restApiRootResourceId:
+      Fn::ImportValue: "${self:custom.config.BASE_NAME}-${opt:stage}-rootResourceId"
+
+custom:
+  config: ${file(../../config-${opt:stage}.yml)}
+
+  webpack:
+    includeModules:
+      forceExclude:
+        - aws-sdk
+      packagePath: ../../package.json
+      
+  authorizer:
+    type: TOKEN
+    authorizerId:
+      Fn::ImportValue: ${self:custom.config.BASE_NAME}-${opt:stage}-ApiGatewayAuthorizerId
+
+plugins:
+  - serverless-webpack
+package:
+  include:
+    - ../../node_modules
+
+functions:   
+## UPLOAD API
+  UploadMultiPart:
+    name: ${self:custom.config.BASE_NAME}-${opt:stage}-UploadMultiPart
+    handler: upload_file.MultiPart
+    description: File Upload  MultiPart
+    environment:
+      ${file(../../config-${opt:stage}.yml)}
+    events:
+      - http:
+          path: /upload/multipart
+          method: post
+          integration: lambda-proxy
+          authorizer: ${self:custom.authorizer}           
+          cors: true
+
+  UploadBase64:
+    name: ${self:custom.config.BASE_NAME}-${opt:stage}-UploadBase64
+    handler: upload_file.uploadBase64
+    description: File Upload Base 64
+    environment:
+      ${file(../../config-${opt:stage}.yml)}
+    events:
+      - http:
+          path: /upload/base64
+          method: post
+          integration: lambda-proxy
+          authorizer: ${self:custom.authorizer} 
+          cors: true
