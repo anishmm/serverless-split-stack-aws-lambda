@@ -1,4 +1,4 @@
-# AWS serverless stack -  example
+# AWS Split serverless stack -  example
 
 This repository provides an example of using the [serverless framework](https://serverless.com) with split stacks
 i.e. splitting the CloudFormation resources across multiple stacks.
